@@ -17,37 +17,21 @@ import librosa
 
 # Définir le filtre FIR
 # Defining the FIR filter
-num = 41
-cut = 0.1
-fs = 1
 B = firwin(num, cut, fs=fs)
 
 # Analyser la réponse en fréquence du filtre FIR
 # Analyzing the frequency response of the FIR filter
 W, H = freqz(B, worN=512, fs=fs)
-plt.plot(W, np.abs(H))
-plt.title('Réponse en fréquence du filtre FIR')
-plt.title('Frequency response of the FIR filter')
-plt.xlabel('Fréquence')
-plt.xlabel('Frequency')
-plt.ylabel('Magnitude')
-plt.ylabel('Magnitude')
-plt.grid()
-plt.show()
 
 # Appliquer le filtre FIR aux signaux
 # Applying the FIR filter to signals
-n = np.arange(200)
-num = 41
-cut = 0.2
-fs = 1
+n = np.arange(100)
 a = 1
 x1 = np.cos(2 * np.pi * 0.1 * n)
-x2 = np.cos(2 * np.pi * 0.3 * n)
 
-B = firwin(numtaps, cutoff, fs=fs)
+B = firwin(num, fc, fs=fs)
 y1 = lfilter(B, a, x1)
-y2 = lfilter(B, a, x2)
+
 
 # Fonction pour limiter la bande passante
 # Function to limit bandwidth
@@ -60,20 +44,20 @@ y2 = lfilter(B, a, x2)
 
 # Chargement des fichiers audio
 # Loading audio files
-audio_mono, fs1 = librosa.load('./signals/file_mono.wav', sr=None, mono=True)
-audio_stereo, fs2 = librosa.load('./signals/file_stereo.wav', sr=None, mono=False)
+audio_mono, fs1 = librosa.load('audicity2.wav', sr=None, mono=True)
+audio_stereo, fs2 = librosa.load('audicity2.wav', sr=None, mono=False)
 
 # Vérification des fichiers WAV
 # Checking WAV files
 
-    audio, ratesample = librosa.load(wav_filename, sr=None, mono=True)
+    audicity, ratesample = librosa.load(wav_filename, sr=None, mono=True)
     try:
         if sr != ratesample:
             return False
-        duration = librosa.get_duration(y=audio, sr=ratesample)
+        duration = librosa.get_duration(y=audicity, sr=ratesample)
         if not (dur_min < duration < dur_max):
             return False
-        xmax = np.max(audio)
+        xmax = np.max(audicity)
         if not (amin < xmax < amax):
             return False
         return True
@@ -86,21 +70,21 @@ audio_stereo, fs2 = librosa.load('./signals/file_stereo.wav', sr=None, mono=Fals
     else:
         num_channel = 1
     
-
 # Effet de fondu en ouverture
 # Fade In effect
 
     dur_muest = int(dur_fadein * fs)
     y = np.copy(x)
-    assert x.ndim == 1
-    assert isinstance(dur_muest, int), 'Convertir en entier le nombre d’échantillons avec int()'
-    assert isinstance(dur_muest, int), 'Convert the number of samples to integer with int()'
-    ganancia = np.linspace(0, 1, dur_muest)
-    y[:dur_muest] *= ganancia
+    #assert x.ndim == 1
+    #assert isinstance(dur_muest, int)
+    #assert isinstance(dur_muest, int)
+    ganance = np.linspace(0, 1, dur_muest)
+    y[:dur_muest] *= ganance
     return y
 
 # Effet de fondu en fermeture
 # Fade Out effect
+######le professeur dit que ça ne convient pas######
     duration = int(dur_sistem * fs)
     y = np.copy(x)
     ganance = np.linspace(1, 0, duration)
@@ -110,8 +94,8 @@ audio_stereo, fs2 = librosa.load('./signals/file_stereo.wav', sr=None, mono=Fals
     elif y.ndim == 2:
         y[:, -dur:] *= ganance
     else:
-        raise ValueError("Le signal doit être mono ou stéréo")
-        raise ValueError("The signal must be mono or stereo")
+        raise ValueError("doit être mono ou stéréo")
+        raise ValueError(" mono or stereo")
     return y
 
 # Saturation du signal
@@ -132,9 +116,7 @@ audio_stereo, fs2 = librosa.load('./signals/file_stereo.wav', sr=None, mono=Fals
 
 
     assert len(x.shape) == 2, 'L’entrée doit être un tableau bidimensionnel'
-    assert len(x.shape) == 2, 'The input must be a two-dimensional array'
     assert x.shape[0] == 2, 'Il doit y avoir deux canaux'
-    assert x.shape[0] == 2, 'There must be two channels'
     y = np.mean(x, axis=0)
     return y
 
@@ -150,29 +132,29 @@ audio_stereo, fs2 = librosa.load('./signals/file_stereo.wav', sr=None, mono=Fals
 # Inserting silence into the audio
 
     dur_ini = int(init_sistem * fs)
-    dur_mues = int(dur_sistem * fs)
+    dur_mues = int(dur_sistem * fs)##### very importante
     
     if x.ndim == 1:
         silence = np.zeros(dur_mues)
-        y = np.concatenate((x[:dur_ini], silence, x[dur_ini:]), axis=0)
+        y = np.concatenate((x[:dur_ini], silence, x[dur_ini:]), axis=0) # another option in other exercise (x,silence),axis
     elif x.ndim == 2:
         silence = np.zeros((2, dur_mues))
         y = np.concatenate((x[:, :dur_ini], silence, x[:, dur_ini:]), axis=1)
     return y
 
+# Dequantification et déquantification
+# Dequantization and de-quantization
+    belta = 1 / (2**(n - 1))
+    xrec = belta *xq
+    return xrec
+    
 # Quantification et déquantification
 # Quantization and de-quantization
  
     x_limit = np.clip(x, -1, 1)
-    delta = 1 / 2**(nbits - 1)
-    xq = np.floor(x_limit / delta + 0.5)
+    xq = np.floor(x_limit / belta + 0.5)
     return xq
 
-# Dequantification et déquantification
-# Dequantization and de-quantization
-    delta = 1 / (2**(nbits - 1))
-    xrec = xq * delta
-    return xrec
 
 # Transformée de Fourier
 # Fourier Transform
@@ -182,7 +164,6 @@ t = np.linspace(0, dur, int(fs * dur), endpoint=False)  # Time vector
 X = np.fft.fft(x)
 k = np.arange(len(x))
 fd = np.arange(len(x)) / len(x)  # Vecteur de fréquence normalisée
-fd = np.arange(len(x)) / len(x)  # Normalized frequency vector
 
 # Convolution avec FFT
 # Convolution with FFT
